@@ -5,15 +5,18 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@clerk/express": "^2.1.56",
     "cors": "^2.8.6",
+    "cron": "^4.4.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.9.2"
+    "mongoose": "^9.9.2",
+    "svix": "^1.99.1"
   }
 }
