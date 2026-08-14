@@ -34,17 +34,24 @@ app.get("/health", (req, res) => {
 });
 
 async function start() {
-  await connectDB();
-  dbReady = true;
-
+  // Start listening immediately so /health is always reachable.
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+  });
 
-    if (process.env.NODE_ENV === "production") job.start();
-  })
-};
+  // Now connect to the database; /health will return 503 until this succeeds.
+  try {
+    await connectDB();
+    dbReady = true;
+  } catch (err) {
+    console.error("Database connection failed:", err.message || err);
+    process.exit(1);
+  }
+
+  if (process.env.NODE_ENV === "production") job.start();
+}
 
 start().catch((err) => {
-  console.error("Database startup failed", err);
+  console.error("Failed to start the HTTP server:", err.message || err);
   process.exit(1);
 });

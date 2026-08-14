@@ -24,7 +24,11 @@ const job = new CronJob("*/14 * * * *", function () {
   const clearDeadline = () => clearTimeout(deadline);
 
   request.once("close", clearDeadline);
-  request.on("error", (e) => clearDeadline());
+
+  request.on("error", (error) => {
+    clearDeadline();
+    console.error("Health-check request failed", error);
+  });
 });
 
 export default job;
