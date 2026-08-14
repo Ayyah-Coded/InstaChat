@@ -24,13 +24,23 @@ app.use(express.json());
 const PORT = process.env.PORT;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
+let dbReady = false;
+
 app.get("/health", (req, res) => {
+  if (!dbReady) {
+    return res.status(503).json({ ok: false, message: "Database not ready" });
+  }
   res.status(200).json({ ok: true });
 });
 
-app.listen(PORT, () => {
-  connectDB();
-  console.log(`Server is running on port ${PORT}`);
+async function start() {
+  await connectDB();
+  dbReady = true;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 
-  if (process.env.NODE_ENV === "production") job.start();
-});
+    if (process.env.NODE_ENV === "production") job.start();
+  })
+};
+
+start();

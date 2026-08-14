@@ -40,33 +40,28 @@ export const handleClerkWebhook = async (req, res) => {
 
   // Handle user lifecycle events
   try {
-    if (eventType === "user.created") {
-      const { email_addresses, first_name, last_name, image_url } = evt.data;
+    // Build common user data from Clerk event payload
+    const { email_addresses, first_name, last_name, image_url, primary_email_address_id } = evt.data;
 
-      const primaryEmail = email_addresses?.[0]?.email_address;
-      const fullName = `${first_name || ""} ${last_name || ""}`.trim() || "User";
+    const primary = email_addresses?.find((e) => e.id === primary_email_address_id);
 
-      await User.create({
-        clerkId: id,
-        email: primaryEmail,
-        fullName,
-        profilePic: image_url || "",
-      });
+    if (!primary?.email_address) {
+      throw new Error("No primary email address available for user");
     }
 
-    else if (eventType === "user.updated") {
-      const { email_addresses, first_name, last_name, image_url } = evt.data;
+    const primaryEmail = primary.email_address;
+    const fullName = `${first_name || ""} ${last_name || ""}`.trim() || "User";
 
-      const primaryEmail = email_addresses?.[0]?.email_address;
-      const fullName = `${first_name || ""} ${last_name || ""}`.trim() || "User";
-
+    if (eventType === "user.created" || eventType === "user.updated") {
       await User.findOneAndUpdate(
         { clerkId: id },
         {
+          clerkId: id,
           email: primaryEmail,
           fullName,
           profilePic: image_url || "",
-        }
+        },
+        { upsert: true, new: true }
       );
     }
 
@@ -76,7 +71,10 @@ export const handleClerkWebhook = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Webhook processed" });
   } catch (error) {
-    console.error("Database operation failed:", error);
+    console.error("Database operation failed:", {
+      name: error?.name,
+      code: error?.code,
+    });
     return res.status(500).json({ error: "Database operation failed" });
   }
 };
