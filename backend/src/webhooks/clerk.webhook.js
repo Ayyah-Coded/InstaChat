@@ -40,19 +40,21 @@ export const handleClerkWebhook = async (req, res) => {
 
   // Handle user lifecycle events
   try {
-    // Build common user data from Clerk event payload
-    const { email_addresses, first_name, last_name, image_url, primary_email_address_id } = evt.data;
-
-    const primary = email_addresses?.find((e) => e.id === primary_email_address_id);
-
-    if (!primary?.email_address) {
-      throw new Error("No primary email address available for user");
-    }
-
-    const primaryEmail = primary.email_address;
-    const fullName = `${first_name || ""} ${last_name || ""}`.trim() || "User";
-
     if (eventType === "user.created" || eventType === "user.updated") {
+      const {
+        email_addresses, first_name, last_name,
+        image_url, primary_email_address_id,
+      } = evt.data;
+
+      const primary = email_addresses?.find((e) => e.id === primary_email_address_id);
+
+      if (!primary?.email_address) {
+        throw new Error("No primary email address available for user");
+      };
+
+      const primaryEmail = primary.email_address;
+      const fullName = `${first_name || ""} ${last_name || ""}`.trim() || "User";
+
       await User.findOneAndUpdate(
         { clerkId: id },
         {
@@ -61,13 +63,11 @@ export const handleClerkWebhook = async (req, res) => {
           fullName,
           profilePic: image_url || "",
         },
-        { upsert: true, new: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true }
       );
-    }
-
-    else if (eventType === "user.deleted") {
+    } else if (eventType === "user.deleted") {
       await User.findOneAndDelete({ clerkId: id });
-    }
+    };
 
     return res.status(200).json({ success: true, message: "Webhook processed" });
   } catch (error) {

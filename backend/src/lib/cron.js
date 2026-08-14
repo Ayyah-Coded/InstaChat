@@ -14,13 +14,17 @@ const job = new CronJob("*/14 * * * *", function () {
     if (res.statusCode === 200) console.log("GET request sent successfully");
     else console.log("GET request failed", res.statusCode);
 
+    res.once("end", clearDeadline)
     res.resume();
   });
 
-  request.setTimeout(10_000, () => {
+  const deadline = setTimeout(() => {
     request.destroy(new Error("Health-check request timed out"));
-  });
-  request.on("error", (e) => console.error("Error while sending request", e));
+  }, 10_000);
+  const clearDeadline = () => clearTimeout(deadline);
+
+  request.once("close", clearDeadline);
+  request.on("error", (e) => clearDeadline());
 });
 
 export default job;
