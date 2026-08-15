@@ -123,6 +123,7 @@ export async function sendMessage(req, res) {
 
     res.status(201).json(newMessage);
   } catch (error) {
+    cleanFile(req.file);
     console.error("Error in sendMessage:", error.message);
     res.status(500).json({ message: "Internal server error" });
   };

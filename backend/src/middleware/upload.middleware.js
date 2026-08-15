@@ -9,17 +9,25 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25mb
 // mkdtempSync defaults to 0o700 (owner rwx only) on POSIX systems.
 const UPLOAD_DIR = fs.mkdtempSync(path.join(tmpdir(), "instachat-uploads-"));
 
-// Verify the directory has the expected owner-only permissions.
+// Enforce owner-only permissions (0o700) on the upload directory.
+// While mkdtempSync defaults to 0o700 on POSIX, an unusual umask or
+// platform quirk could leave the directory accessible to other users.
+// Set it explicitly and fail startup if we cannot guarantee isolation.
 try {
-  const { mode } = fs.statSync(UPLOAD_DIR);
-  const perms = mode & 0o777;
-  if (process.platform !== "win32" && perms !== 0o700) {
-    console.warn(
-      `Upload directory "${UPLOAD_DIR}" has permissions ${perms.toString(8)}, expected 700`
-    );
+  if (process.platform !== "win32") {
+    fs.chmodSync(UPLOAD_DIR, 0o700);
+    const { mode } = fs.statSync(UPLOAD_DIR);
+    if ((mode & 0o777) !== 0o700) {
+      throw new Error(
+        `Upload directory "${UPLOAD_DIR}" has permissions ${(mode & 0o777).toString(8)}, expected 700`
+      );
+    }
   }
-} catch {
-  /* stat should not fail on a just-created directory; ignore if it does */
+} catch (err) {
+  console.error(
+    `Upload directory permission enforcement failed: ${err.message}`
+  );
+  process.exit(1);
 }
 
 const diskStorage = multer.diskStorage({
@@ -103,9 +111,22 @@ export async function validateFileSignature(req, res, next) {
   try {
     fd = await fs.promises.open(req.file.path, "r");
     await fd.read(buf, 0, HEADER_BYTES, 0);
-  } catch {
-    // Clean up the temp file before responding
-    fs.unlink(req.file.path, () => {});
+  } catch (err) {
+    console.error("Failed to read uploaded file:", err);
+
+    // Close the descriptor first (Windows requires this before unlinking)
+    if (fd) {
+      try { await fd.close(); } catch { /* close errors are non-fatal */ }
+      fd = undefined;
+    }
+
+    // Now delete the temp file and surface non-ENOENT errors
+    fs.unlink(req.file.path, (unlinkErr) => {
+      if (unlinkErr && unlinkErr.code !== "ENOENT") {
+        console.error("Failed to delete temp file after read error:", unlinkErr);
+      }
+    });
+
     return res.status(400).json({ message: "Could not read uploaded file" });
   } finally {
     if (fd) {
@@ -117,7 +138,11 @@ export async function validateFileSignature(req, res, next) {
 
   if (!detectedMime) {
     // Clean up the temp file before responding
-    fs.unlink(req.file.path, () => {});
+    fs.unlink(req.file.path, (unlinkErr) => {
+      if (unlinkErr && unlinkErr.code !== "ENOENT") {
+        console.error("Failed to delete temp file:", unlinkErr);
+      }
+    });
     return res.status(400).json({
       message: "Unsupported or invalid file type. Only standard image and video formats are allowed.",
     });
