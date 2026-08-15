@@ -1,5 +1,6 @@
-import User from "../models/user.model.js";
-import Message from "../models/message.model.js";
+import mongoose from "mongoose";
+import User from "../db/models/User.js";
+import Message from "../db/models/Message.js";
 import { hasImageKitConfig, uploadChatMedia } from "../lib/imagekit.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
@@ -66,6 +67,15 @@ export async function sendMessage(req, res) {
     const { text } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
+
+    if (!mongoose.isValidObjectId(receiverId)) {
+      return res.status(404).json({ message: "Recipient not found" });
+    };
+
+    const receiverExists = await User.findById(receiverId);
+    if (!receiverExists) {
+      return res.status(404).json({ message: "Recipient not found" });
+    }
 
     let imageUrl;
     let videoUrl;

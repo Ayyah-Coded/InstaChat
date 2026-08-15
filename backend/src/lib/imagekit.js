@@ -1,4 +1,5 @@
-import ImageKit, { toFile } from "@imagekit/nodejs";
+import ImageKit from "@imagekit/nodejs";
+import fs from "fs";
 
 const imagekit = new ImageKit({ privateKey: process.env.IMAGEKIT_PRIVATE_KEY });
 
@@ -15,13 +16,24 @@ function createFileName(originalName = "upload") {
 async function uploadChatMedia(file) {
   const fileName = createFileName(file.originalname);
 
-  const result = await imagekit.files.upload({
-    file: await toFile(file.buffer, fileName, { type: file.mimetype }),
-    fileName,
-    folder: "/chat",
-  });
+  // Stream the file from disk instead of loading its buffer into memory.
+  // This keeps large media files (up to 25 MB) out of the application heap.
+  const readStream = fs.createReadStream(file.path);
 
-  return result.url;
+  try {
+    const result = await imagekit.files.upload({
+      file: readStream,
+      fileName,
+      folder: "/chat",
+    });
+
+    return result.url;
+  } finally {
+    // Clean up the temporary file regardless of success or failure.
+    fs.unlink(file.path, (err) => {
+      if (err) console.error("Failed to clean up temp file:", file.path, err.message);
+    });
+  }
 };
 
 export { uploadChatMedia, hasImageKitConfig };
