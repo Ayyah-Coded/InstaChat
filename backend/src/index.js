@@ -5,6 +5,7 @@ import job from "./lib/cron.js";
 import { connectDB } from "./db/db.js";
 import { clerkMiddleware } from '@clerk/express';
 
+import { server } from "./lib/socket.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
@@ -18,7 +19,6 @@ app.use(cors({
 }));
 app.use(clerkMiddleware());
 
-// Express route for Clerk Webhooks
 app.post("/api/webhooks", express.raw({ type: "application/json" }), handleClerkWebhook);
 
 app.use(express.json());
@@ -39,12 +39,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
 async function start() {
-  // Start listening immediately so /health is always reachable.
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 
-  // Now connect to the database; /health will return 503 until this succeeds.
   try {
     await connectDB();
     dbReady = true;

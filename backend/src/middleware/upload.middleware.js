@@ -3,16 +3,11 @@ import fs from "fs";
 import path from "path";
 import { tmpdir } from "os";
 
+
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25mb
 
-// Create a unique, owner-only temporary directory for uploaded files.
-// mkdtempSync defaults to 0o700 (owner rwx only) on POSIX systems.
 const UPLOAD_DIR = fs.mkdtempSync(path.join(tmpdir(), "instachat-uploads-"));
 
-// Enforce owner-only permissions (0o700) on the upload directory.
-// While mkdtempSync defaults to 0o700 on POSIX, an unusual umask or
-// platform quirk could leave the directory accessible to other users.
-// Set it explicitly and fail startup if we cannot guarantee isolation.
 try {
   if (process.platform !== "win32") {
     fs.chmodSync(UPLOAD_DIR, 0o700);
@@ -21,14 +16,14 @@ try {
       throw new Error(
         `Upload directory "${UPLOAD_DIR}" has permissions ${(mode & 0o777).toString(8)}, expected 700`
       );
-    }
-  }
+    };
+  };
 } catch (err) {
   console.error(
     `Upload directory permission enforcement failed: ${err.message}`
   );
   process.exit(1);
-}
+};
 
 const diskStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -57,26 +52,25 @@ export const upload = multer({
   },
 });
 
-// ─── File signature validation ───────────────────────────────────────────────
-// Maps detected MIME types to their magic-byte patterns (read from offset 0).
 
 const FILE_SIGNATURES = {
-  "image/jpeg":       { offset: 0, bytes: [0xFF, 0xD8, 0xFF] },
-  "image/png":        { offset: 0, bytes: [0x89, 0x50, 0x4E, 0x47] },
-  "image/gif":        { offset: 0, bytes: [0x47, 0x49, 0x46, 0x38] },        // GIF87a / GIF89a
-  "image/webp":       { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46],
-                        extra: { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] } }, // RIFF … WEBP
-  "image/bmp":        { offset: 0, bytes: [0x42, 0x4D] },                    // BM
-  "video/mp4":        { offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] },       // ....ftyp
-  "video/webm":       { offset: 0, bytes: [0x1A, 0x45, 0xDF, 0xA3] },       // EBML header
-  "video/x-msvideo":  { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46],
-                        extra: { offset: 8, bytes: [0x41, 0x56, 0x49, 0x20] } }, // RIFF … AVI␣
+  "image/jpeg": { offset: 0, bytes: [0xFF, 0xD8, 0xFF] },
+  "image/png": { offset: 0, bytes: [0x89, 0x50, 0x4E, 0x47] },
+  "image/gif": { offset: 0, bytes: [0x47, 0x49, 0x46, 0x38] },        // GIF87a / GIF89a
+  "image/webp": {
+    offset: 0, bytes: [0x52, 0x49, 0x46, 0x46],
+    extra: { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] }
+  }, // RIFF … WEBP
+  "image/bmp": { offset: 0, bytes: [0x42, 0x4D] },                    // BM
+  "video/mp4": { offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] },       // ....ftyp
+  "video/webm": { offset: 0, bytes: [0x1A, 0x45, 0xDF, 0xA3] },       // EBML header
+  "video/x-msvideo": {
+    offset: 0, bytes: [0x52, 0x49, 0x46, 0x46],
+    extra: { offset: 8, bytes: [0x41, 0x56, 0x49, 0x20] }
+  }, // RIFF … AVI␣
 };
 
-/**
- * Check whether `header` (a Buffer of at least 16 bytes) matches any
- * signature in the allowlist. Returns the detected MIME type or null.
- */
+
 function detectMimeType(header) {
   for (const [mime, sig] of Object.entries(FILE_SIGNATURES)) {
     const primaryOffset = sig.offset;
@@ -93,14 +87,6 @@ function detectMimeType(header) {
   return null;
 }
 
-/**
- * Middleware – runs **after** `upload.single("media")` has written the
- * temp file to disk. Reads the first 16 bytes, validates the true file
- * signature against the allowlist, and overrides the untrusted
- * `req.file.mimetype` with the detected value.
- *
- * Rejects with 400 and cleans up the temp file when no signature matches.
- */
 export async function validateFileSignature(req, res, next) {
   if (!req.file) return next();
 
@@ -120,7 +106,6 @@ export async function validateFileSignature(req, res, next) {
       fd = undefined;
     }
 
-    // Now delete the temp file and surface non-ENOENT errors
     fs.unlink(req.file.path, (unlinkErr) => {
       if (unlinkErr && unlinkErr.code !== "ENOENT") {
         console.error("Failed to delete temp file after read error:", unlinkErr);

@@ -42,18 +42,19 @@ io.use(async (socket, next) => {
 
 io.on("connection", async (socket) => {
   let user;
+
   try {
     user = await User.findOne({ clerkId: socket.data.userId });
   } catch (error) {
     console.error("Socket user resolution failed:", error.message);
     socket.disconnect(true);
     return;
-  }
+  };
 
   if (!user) {
     socket.disconnect(true);
     return;
-  }
+  };
 
   const userId = user._id.toString();
   userSocketMap[userId] = socket.id;

@@ -16,8 +16,6 @@ function createFileName(originalName = "upload") {
 async function uploadChatMedia(file) {
   const fileName = createFileName(file.originalname);
 
-  // Stream the file from disk instead of loading its buffer into memory.
-  // This keeps large media files (up to 25 MB) out of the application heap.
   const readStream = fs.createReadStream(file.path);
 
   try {
