@@ -31,7 +31,7 @@ async function uploadChatMedia(file) {
   } finally {
     // Clean up the temporary file regardless of success or failure.
     fs.unlink(file.path, (err) => {
-      if (err) console.error("Failed to clean up temp file:", file.path, err.message);
+      if (err && err.code !== "ENOENT") console.error("Failed to clean up temp file:", file.path, err.message);
     });
   }
 };

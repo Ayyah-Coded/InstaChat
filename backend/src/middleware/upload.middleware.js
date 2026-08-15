@@ -4,11 +4,22 @@ import path from "path";
 import { tmpdir } from "os";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25mb
-const UPLOAD_DIR = path.join(tmpdir(), "instachat-uploads");
 
-// Ensure the temp directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Create a unique, owner-only temporary directory for uploaded files.
+// mkdtempSync defaults to 0o700 (owner rwx only) on POSIX systems.
+const UPLOAD_DIR = fs.mkdtempSync(path.join(tmpdir(), "instachat-uploads-"));
+
+// Verify the directory has the expected owner-only permissions.
+try {
+  const { mode } = fs.statSync(UPLOAD_DIR);
+  const perms = mode & 0o777;
+  if (process.platform !== "win32" && perms !== 0o700) {
+    console.warn(
+      `Upload directory "${UPLOAD_DIR}" has permissions ${perms.toString(8)}, expected 700`
+    );
+  }
+} catch {
+  /* stat should not fail on a just-created directory; ignore if it does */
 }
 
 const diskStorage = multer.diskStorage({
@@ -87,13 +98,19 @@ export async function validateFileSignature(req, res, next) {
 
   const HEADER_BYTES = 16;
   const buf = Buffer.alloc(HEADER_BYTES);
+  let fd;
 
   try {
-    const fd = await fs.promises.open(req.file.path, "r");
+    fd = await fs.promises.open(req.file.path, "r");
     await fd.read(buf, 0, HEADER_BYTES, 0);
-    await fd.close();
   } catch {
+    // Clean up the temp file before responding
+    fs.unlink(req.file.path, () => {});
     return res.status(400).json({ message: "Could not read uploaded file" });
+  } finally {
+    if (fd) {
+      try { await fd.close(); } catch { /* close errors are non-fatal */ }
+    }
   }
 
   const detectedMime = detectMimeType(buf);

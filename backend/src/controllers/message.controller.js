@@ -1,8 +1,20 @@
 import mongoose from "mongoose";
+import fs from "fs";
 import User from "../db/models/User.js";
 import Message from "../db/models/Message.js";
 import { hasImageKitConfig, uploadChatMedia } from "../lib/imagekit.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
+
+
+/** Delete a multer temp file, ignoring ENOENT so duplicate cleanup is harmless. */
+function cleanFile(file) {
+  if (!file) return;
+  fs.unlink(file.path, (err) => {
+    if (err && err.code !== "ENOENT") {
+      console.error("Failed to clean up temp file:", file.path, err.message);
+    }
+  });
+}
 
 
 export async function getUsersForSidebar(req, res) {
@@ -69,11 +81,13 @@ export async function sendMessage(req, res) {
     const senderId = req.user._id;
 
     if (!mongoose.isValidObjectId(receiverId)) {
+      cleanFile(req.file);
       return res.status(404).json({ message: "Recipient not found" });
     };
 
     const receiverExists = await User.findById(receiverId);
     if (!receiverExists) {
+      cleanFile(req.file);
       return res.status(404).json({ message: "Recipient not found" });
     }
 
@@ -82,6 +96,7 @@ export async function sendMessage(req, res) {
 
     if (req.file) {
       if (!hasImageKitConfig()) {
+        cleanFile(req.file);
         return res.status(500).json({ message: "Media upload is not configured" });
       };
 
