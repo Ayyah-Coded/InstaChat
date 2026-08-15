@@ -14,8 +14,8 @@ import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
 const app = express();
 
 app.use(cors({
-  // origin: FRONTEND_URL,
-  // credentials: true
+  origin: FRONTEND_URL,
+  credentials: true
 }));
 app.use(clerkMiddleware());
 
@@ -39,17 +39,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
 async function start() {
-  server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-
   try {
     await connectDB();
     dbReady = true;
   } catch (err) {
     console.error("Database connection failed:", err.message || err);
     process.exit(1);
-  }
+  };
+
+  server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
 
   if (process.env.NODE_ENV === "production") job.start();
 }
