@@ -1,11 +1,13 @@
-import express from "express";
 import "dotenv/config";
 import cors from "cors";
-
+import express from "express";
+import job from "./lib/cron.js";
 import { connectDB } from "./db/db.js";
 import { clerkMiddleware } from '@clerk/express';
+
+import authRoutes from "./routes/auth.route.js";
+import messageRoutes from "./routes/message.route.js";
 import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
-import job from "./lib/cron.js";
 
 
 const app = express();
@@ -32,6 +34,9 @@ app.get("/health", (req, res) => {
   }
   res.status(200).json({ ok: true });
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/messages", messageRoutes);
 
 async function start() {
   // Start listening immediately so /health is always reachable.
