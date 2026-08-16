@@ -35,6 +35,7 @@ function App() {
             path="/auth"
             element={!isSignedIn ? <AuthPage /> : <Navigate to={"/"} replace />}
           />
+          <Route path="*" element={<Navigate to={isSignedIn ? "/" : "/auth"} replace />} />
         </Routes>
         <Toaster />
       </WallpaperProvider>
