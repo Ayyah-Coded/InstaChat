@@ -1,7 +1,7 @@
 import { WallpaperProvider } from "./context/WallpaperContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { Navigate, Route, Routes } from "react-router";
-import { useAuthStore } from "./store/useAuthStore";
+import { useAuthStore } from "./stores/useAuthStore";
 import PageLoader from "./components/PageLoader";
 import { Toaster } from "react-hot-toast";
 import ChatPage from "./pages/ChatPage";

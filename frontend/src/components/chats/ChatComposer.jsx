@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Button, TextArea } from "@heroui/react";
-import { useChatStore } from "../../store/useChatStore";
+import { useChatStore } from "../../stores/useChatStore";
 import useKeyboardSound from "../../hooks/useKeyboardSound";
 import { ImageIcon, LoaderIcon, SendHorizontalIcon } from "lucide-react";
 import { useSelectedConversation } from "../../hooks/useSelectedConversation";
@@ -22,7 +22,10 @@ export function ChatComposer() {
   };
 
   const handleSend = async () => {
+    if (!composerText.trim()) return;
+
     const didSendMessage = await sendTextMessage(activeConversationId);
+
     if (didSendMessage) playSoundIfEnabled();
   };
 
@@ -69,6 +72,7 @@ export function ChatComposer() {
         />
         <Button
           variant="ghost"
+          aria-label="Attach image or video"
           isIconOnly
           isDisabled={isSendingMedia}
           className="size-9 shrink-0 touch-manipulation self-end text-accent"
@@ -92,7 +96,13 @@ export function ChatComposer() {
           className="flex-1 rounded-full"
         />
 
-        <Button variant="primary" isIconOnly isDisabled={!composerText.trim()} onPress={handleSend}>
+        <Button
+          aria-label="Send message"
+          variant="primary"
+          isIconOnly
+          isDisabled={!composerText.trim()}
+          onPress={handleSend}
+        >
           <SendHorizontalIcon className="size-5" />
         </Button>
       </div>

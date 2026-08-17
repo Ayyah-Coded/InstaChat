@@ -80,6 +80,7 @@ export function ChatHeader() {
           isIconOnly
           className="shrink-0"
           aria-pressed={isSoundEnabled}
+          aria-label={isSoundEnabled ? "Mute message sounds" : "Enable message sounds"}
           onPress={() => setSoundEnabled(!isSoundEnabled)}
         >
           {isSoundEnabled ? (

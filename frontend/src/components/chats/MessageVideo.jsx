@@ -21,7 +21,7 @@ export function MessageVideo({ src }) {
       poster={posterSrc}
       controls
       playsInline
-      preload="metadata"
+      preload="none"
       className="mb-1.5 max-h-52 max-w-full rounded-lg object-contain sm:max-h-64 sm:rounded-xl"
     />
   );
