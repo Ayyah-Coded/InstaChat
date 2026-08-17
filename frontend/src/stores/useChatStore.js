@@ -58,15 +58,11 @@ export const useChatStore = create(
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
 
-          if (String(get().activeConversationId) === String(userId)) {
-            set((state) => ({
-              messages:
-                String(state.activeConversationId) === String(selectedUser._id)
-                  ? [...state.messages, res.data]
-                  : state.messages,
-              composerText: '',
-            }));
-          };
+          set((state) =>
+            String(state.activeConversationId) === String(userId)
+              ? { messages: res.data, composerText: "" }
+              : {},
+          );
         } catch (error) {
           toast.error(error.response?.data?.message || "Failed to load messages");
         } finally {

@@ -18,8 +18,9 @@ export function isSameDay(a, b) {
 export function formatMessageDate(date) {
   const messageDate = startOfDay(date);
   const today = startOfDay(new Date());
-  const yesterday = today - 24 * 60 * 60 * 1000;
-
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = startOfDay(yesterdayDate);
   if (messageDate === today) return "Today";
   if (messageDate === yesterday) return "Yesterday";
 
