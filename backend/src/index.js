@@ -11,6 +11,9 @@ import messageRoutes from "./routes/message.route.js";
 import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
 
 
+const PORT = process.env.PORT;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+
 const app = express();
 
 app.use(cors({
@@ -22,9 +25,6 @@ app.use(clerkMiddleware());
 app.post("/api/webhooks", express.raw({ type: "application/json" }), handleClerkWebhook);
 
 app.use(express.json());
-
-const PORT = process.env.PORT;
-const FRONTEND_URL = process.env.FRONTEND_URL;
 
 let dbReady = false;
 

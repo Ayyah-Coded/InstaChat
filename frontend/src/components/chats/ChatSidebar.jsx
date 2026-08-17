@@ -4,8 +4,8 @@ import { MessageSquareIcon, UsersIcon } from "lucide-react";
 
 import { APP_NAME, AppLogo } from "../AppLogo";
 import { ConversationRow } from "./ConversationRow";
-import { useAuthStore } from "../../store/useAuthStore";
-import { useChatStore } from "../../store/useChatStore";
+import { useAuthStore } from "../../stores/useAuthStore";
+import { useChatStore } from "../../stores/useChatStore";
 import { getInitials, useSelectedConversation } from "../../hooks/useSelectedConversation";
 
 function mapUserForList(user, onlineUsers) {

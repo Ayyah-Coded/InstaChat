@@ -5,6 +5,11 @@ import { useAuthStore } from "./useAuthStore";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
+// Monotonic sequence used to identify the most recently started getMessages request.
+// Only that "active" request may apply results, errors, or loading updates; any
+// earlier (stale) request whose response resolves later is ignored.
+let messagesRequestSeq = 0;
+
 export const useChatStore = create(
   persist(
     (set, get) => ({
@@ -54,9 +59,16 @@ export const useChatStore = create(
 
       getMessages: async (userId) => {
         if (!userId) return;
+        // Capture the identity of this request. If a newer request is started,
+        // this one becomes stale and must not apply any side effects.
+        const requestId = ++messagesRequestSeq;
         set({ isMessagesLoading: true });
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
+
+          // Ignore results from stale requests so they can't replace the
+          // messages of a newer, still-active request.
+          if (requestId !== messagesRequestSeq) return;
 
           set((state) =>
             String(state.activeConversationId) === String(userId)
@@ -64,9 +76,16 @@ export const useChatStore = create(
               : {},
           );
         } catch (error) {
+          // Ignore errors from stale requests so they don't toast the user
+          // for a conversation that is no longer active.
+          if (requestId !== messagesRequestSeq) return;
           toast.error(error.response?.data?.message || "Failed to load messages");
         } finally {
-          set({ isMessagesLoading: false });
+          // Only the active request may clear the loading flag; a stale request
+          // resolving later must not clear it while a newer one is in flight.
+          if (requestId === messagesRequestSeq) {
+            set({ isMessagesLoading: false });
+          }
         }
       },
 

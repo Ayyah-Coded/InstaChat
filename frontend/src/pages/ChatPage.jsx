@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useWallpaper } from "../context/wallpaper";
-import { useChatStore } from "../store/useChatStore";
-import ChatSidebar from "../components/chat/ChatSidebar";
-import { ChatHeader } from "../components/chat/ChatHeader";
-import { MessageList } from "../components/chat/MessageList";
-import { ChatComposer } from "../components/chat/ChatComposer";
+import { useChatStore } from "../stores/useChatStore";
+import ChatSidebar from "../components/chats/ChatSidebar";
+import { ChatHeader } from "../components/chats/ChatHeader";
+import { MessageList } from "../components/chats/MessageList";
+import { ChatComposer } from "../components/chats/ChatComposer";
 import { useSelectedConversation } from "../hooks/useSelectedConversation";
 
 

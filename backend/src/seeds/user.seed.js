@@ -112,11 +112,18 @@ async function seedDatabase() {
   );
 }
 
-seedDatabase()
-  .catch((error) => {
+async function main() {
+  try {
+    await seedDatabase();
+  } catch (error) {
     console.error("Failed to seed users:", error);
     process.exitCode = 1;
-  })
-  .finally(async () => {
+  } finally {
     await mongoose.connection.close();
-  });
+  }
+}
+
+main().catch((error) => {
+  console.error("Failed to close database connection:", error);
+  process.exitCode = 1;
+});

@@ -4,7 +4,7 @@ import { ChevronLeftIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
 import { AppLogo } from "../AppLogo";
 import { ThemeToggle } from "../ThemeToggle";
 import { WallpaperPicker } from "../WallpaperPicker";
-import { useChatStore } from "../../store/useChatStore";
+import { useChatStore } from "../../stores/useChatStore";
 import { ThemePresetPicker } from "../ThemePresetPicker";
 import { AvatarWithOnlineIndicator } from "./AvatarWithOnlineIndicator";
 import { useSelectedConversation } from "../../hooks/useSelectedConversation";
