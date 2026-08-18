@@ -5,7 +5,7 @@ import job from "./lib/cron.js";
 import { connectDB } from "./db/db.js";
 import { clerkMiddleware } from '@clerk/express';
 
-import { server } from "./lib/socket.js";
+import { app, server } from "./lib/socket.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
@@ -13,8 +13,6 @@ import { handleClerkWebhook } from "./webhooks/clerk.webhook.js";
 
 const PORT = process.env.PORT;
 const FRONTEND_URL = process.env.FRONTEND_URL;
-
-const app = express();
 
 app.use(cors({
   origin: FRONTEND_URL,
